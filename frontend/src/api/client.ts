@@ -2,7 +2,7 @@ export type Model = { model_id: string; name: string }
 export type ElementItem = { element_id: string; name: string }
 export type Point = { t: number; v: number }
 export type SeriesResp = { element_id: string; metric: string; series: Point[] }
-export type AnalyzeResp = { element_id: string; metric: string; risk: 'LOW'|'MEDIUM'|'HIGH'; note: string }
+export type AnalyzeResp = { element_id: string; metric: string; risk: 'LOW'|'MEDIUM'|'HIGH'; score: number; note: string }
 
 export async function getModels(): Promise<Model[]> {
   const r = await fetch('/api/models')
