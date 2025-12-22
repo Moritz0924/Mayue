@@ -1,0 +1,13 @@
+{
+  "model_id": "demo_001",
+  "elements": [
+    {
+      "element_id": "E1001",
+      "name": "Column-1F-A"
+    },
+    {
+      "element_id": "E1002",
+      "name": "Beam-1F-01"
+    }
+  ]
+}
