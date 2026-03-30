@@ -1,0 +1,614 @@
+openapi: 3.0.3
+info:
+  title: Mayue Digital Twin API
+  version: "0.9.0-mvp+target-review"
+  description: >
+    Combined contract: MVP compatibility layer + Target-layer APIs.
+    Intended for backend replacement with Node.js while keeping frontend stable.
+servers:
+  - url: http://localhost:8000
+    description: Local dev
+
+tags:
+  - name: MVP
+    description: Must remain stable; frontend depends on these.
+  - name: Telemetry
+    description: Data ingestion & query for high-throughput telemetry.
+  - name: Alignment
+    description: Spatial/temporal alignment (BIM-IoT).
+  - name: Prediction
+    description: Model inference orchestration (e.g., LSTM).
+  - name: Evaluation
+    description: Health evaluation (e.g., 1D-CNN).
+  - name: Alerts
+    description: Alert retrieval and rule placeholders.
+  - name: Integration
+    description: Open API exports for external systems.
+  - name: Twin
+    description: Three.js digital twin scene and element state.
+  - name: Copilot
+    description: Multi-agent maintenance planning.
+
+paths:
+  # =========================
+  # MVP Compatibility Layer
+  # =========================
+
+  /api/models:
+    get:
+      tags: [MVP]
+      summary: List models (MVP)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ModelSummary" }
+        default: { $ref: "#/components/responses/ErrorResponse" }
+
+  /api/models/{model_id}/elements:
+    get:
+      tags: [MVP]
+      summary: List elements under a model (MVP)
+      parameters:
+        - $ref: "#/components/parameters/model_id"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ElementSummary" }
+        default: { $ref: "#/components/responses/ErrorResponse" }
+
+  /api/elements/{element_id}/timeseries:
+    get:
+      tags: [MVP]
+      summary: Get element timeseries for chart (MVP)
+      parameters:
+        - $ref: "#/components/parameters/element_id"
+        - name: metric
+          in: query
+          required: true
+          schema: { $ref: "#/components/schemas/Metric" }
+        - name: n
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 5000, default: 120 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LegacyTimeseriesResponse" }
+        default: { $ref: "#/components/responses/ErrorResponse" }
+
+  /api/elements/{element_id}/analyze:
+    post:
+      tags: [MVP]
+      summary: Analyze risk for element (MVP)
+      parameters:
+        - $ref: "#/components/parameters/element_id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AnalyzeRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AnalyzeResponse" }
+        default: { $ref: "#/components/responses/ErrorResponse" }
+
+  # =========================
+  # Target Layer APIs
+  # =========================
+
+  /api/telemetry/ingest:
+    post:
+      tags: [Telemetry]
+      summary: Ingest telemetry in batch (Target)
+      description: Batch ingestion designed for high throughput.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/IngestBatchRequest" }
+      responses:
+        "200":
+          description: Accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/IngestBatchResponse" }
+        default: { $ref: "#/components/responses/ErrorResponse" }
+
+  /api/telemetry/timeseries:
+    get:
+      tags: [Telemetry]
+      summary: Query telemetry timeseries (Target)
+      parameters:
+        - name: element_id
+          in: query
+          required: true
+          schema: { type: string }
+        - name: metric
+          in: query
+          required: true
+          schema: { $ref: "#/components/schemas/Metric" }
+        - name: from_ts_ms
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+        - name: to_ts_ms
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100000, default: 1200 }
+        - name: agg
+          in: query
+          required: false
+          schema: { $ref: "#/components/schemas/Aggregation" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TimeseriesResponse" }
+        default: { $ref: "#/components/responses/ErrorResponse" }
+
+  /api/align/spatial:
+    post:
+      tags: [Alignment]
+      summary: Spatial alignment (Target)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SpatialAlignRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SpatialAlignResponse" }
+        default: { $ref: "#/components/responses/ErrorResponse" }
+
+  /api/align/temporal:
+    post:
+      tags: [Alignment]
+      summary: Temporal alignment (Target)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TemporalAlignRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/TemporalAlignResponse" }
+        default: { $ref: "#/components/responses/ErrorResponse" }
+
+  /api/predict/displacement:
+    post:
+      tags: [Prediction]
+      summary: Displacement prediction (Target)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PredictDisplacementRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PredictDisplacementResponse" }
+        default: { $ref: "#/components/responses/ErrorResponse" }
+
+  /api/evaluate/vibration:
+    post:
+      tags: [Evaluation]
+      summary: Vibration health evaluation (Target)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EvaluateVibrationRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EvaluateVibrationResponse" }
+        default: { $ref: "#/components/responses/ErrorResponse" }
+
+  /api/alerts/recent:
+    get:
+      tags: [Alerts]
+      summary: Get recent alerts (Target)
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 1000, default: 100 }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Alert" }
+        default: { $ref: "#/components/responses/ErrorResponse" }
+
+  /api/integration/export/alerts:
+    get:
+      tags: [Integration]
+      summary: Export alerts for external systems (Target)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Alert" }
+        default: { $ref: "#/components/responses/ErrorResponse" }
+
+  /api/twin/scene:
+    get:
+      tags: [Twin]
+      summary: Get demo twin scene
+      parameters:
+        - name: model_id
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+
+  /api/twin/elements/{element_id}:
+    get:
+      tags: [Twin]
+      summary: Get twin element detail
+      parameters:
+        - $ref: "#/components/parameters/element_id"
+      responses:
+        "200":
+          description: OK
+
+  /api/copilot/maintenance-plan:
+    post:
+      tags: [Copilot]
+      summary: Generate multi-agent maintenance plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [element_id]
+              properties:
+                element_id: { type: string }
+                horizon_sec: { type: integer, minimum: 5, maximum: 300 }
+      responses:
+        "200":
+          description: OK
+
+components:
+  parameters:
+    model_id:
+      name: model_id
+      in: path
+      required: true
+      schema: { type: string }
+    element_id:
+      name: element_id
+      in: path
+      required: true
+      schema: { type: string }
+
+  responses:
+    ErrorResponse:
+      description: Error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorEnvelope" }
+
+  schemas:
+    ModelSummary:
+      type: object
+      required: [model_id, name]
+      properties:
+        model_id: { type: string }
+        name: { type: string }
+
+    ElementSummary:
+      type: object
+      required: [element_id, name]
+      properties:
+        element_id: { type: string }
+        name: { type: string }
+
+    Metric:
+      type: string
+      enum: [disp, vib, temp, hum, wind, strain, stress, settlement]
+
+    Aggregation:
+      type: string
+      enum: [raw, avg, min, max, p95]
+
+    LegacyPoint:
+      type: object
+      required: [t, v]
+      properties:
+        t:
+          type: integer
+          format: int64
+          description: Unix timestamp in seconds (legacy)
+        v:
+          type: number
+          format: double
+
+    LegacyTimeseriesResponse:
+      type: object
+      required: [element_id, metric, series]
+      properties:
+        element_id: { type: string }
+        metric: { $ref: "#/components/schemas/Metric" }
+        series:
+          type: array
+          items: { $ref: "#/components/schemas/LegacyPoint" }
+
+    AnalyzeRequest:
+      type: object
+      required: [metric, horizon]
+      properties:
+        metric: { $ref: "#/components/schemas/Metric" }
+        horizon: { type: integer, minimum: 1, maximum: 86400 }
+
+    AnalyzeResponse:
+      type: object
+      required: [element_id, metric, risk, score]
+      properties:
+        element_id: { type: string }
+        metric: { $ref: "#/components/schemas/Metric" }
+        risk:
+          type: string
+          enum: [LOW, MEDIUM, HIGH]
+        score:
+          type: number
+          format: double
+        note:
+          type: string
+
+    IngestItem:
+      type: object
+      required: [sensor_id, element_id, metric, ts_ms, value]
+      properties:
+        sensor_id: { type: string }
+        element_id: { type: string }
+        metric: { $ref: "#/components/schemas/Metric" }
+        ts_ms: { type: integer, format: int64 }
+        value: { type: number, format: double }
+        coord_local:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items: { type: number, format: double }
+        quality:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+
+    IngestBatchRequest:
+      type: object
+      required: [source, items]
+      properties:
+        source: { type: string }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 50000
+          items: { $ref: "#/components/schemas/IngestItem" }
+
+    IngestBatchResponse:
+      type: object
+      required: [accepted, dropped, server_ts_ms]
+      properties:
+        accepted: { type: integer }
+        dropped: { type: integer }
+        server_ts_ms: { type: integer, format: int64 }
+
+    Point:
+      type: object
+      required: [ts_ms, v]
+      properties:
+        ts_ms: { type: integer, format: int64 }
+        v: { type: number, format: double }
+
+    TimeseriesResponse:
+      type: object
+      required: [element_id, metric, from_ts_ms, to_ts_ms, series, agg]
+      properties:
+        element_id: { type: string }
+        metric: { $ref: "#/components/schemas/Metric" }
+        from_ts_ms: { type: integer, format: int64 }
+        to_ts_ms: { type: integer, format: int64 }
+        agg: { $ref: "#/components/schemas/Aggregation" }
+        series:
+          type: array
+          items: { $ref: "#/components/schemas/Point" }
+
+    SpatialAlignPair:
+      type: object
+      required: [coord_local, coord_bim]
+      properties:
+        coord_local:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items: { type: number, format: double }
+        coord_bim:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items: { type: number, format: double }
+
+    SpatialAlignRequest:
+      type: object
+      required: [model_id, pairs, method]
+      properties:
+        model_id: { type: string }
+        method: { type: string, enum: [least_squares] }
+        pairs:
+          type: array
+          minItems: 3
+          items: { $ref: "#/components/schemas/SpatialAlignPair" }
+
+    SpatialAlignResponse:
+      type: object
+      required: [R, t, rmse_mm]
+      properties:
+        R:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items:
+            type: array
+            minItems: 3
+            maxItems: 3
+            items: { type: number, format: double }
+        t:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items: { type: number, format: double }
+        rmse_mm: { type: number, format: double }
+
+    TemporalAlignRequest:
+      type: object
+      required: [sensor_series, bim_timeline, method]
+      properties:
+        method: { type: string, enum: [dtw] }
+        sensor_series:
+          type: array
+          minItems: 10
+          items:
+            type: object
+            required: [ts_ms, v]
+            properties:
+              ts_ms: { type: integer, format: int64 }
+              v: { type: number, format: double }
+        bim_timeline:
+          type: array
+          minItems: 2
+          items: { type: integer, format: int64 }
+
+    TemporalAlignResponse:
+      type: object
+      required: [aligned, path_len, cost]
+      properties:
+        aligned:
+          type: array
+          items: { $ref: "#/components/schemas/Point" }
+        path_len: { type: integer }
+        cost: { type: number, format: double }
+
+    PredictDisplacementRequest:
+      type: object
+      required: [element_id, features_64, horizon]
+      properties:
+        element_id: { type: string }
+        features_64:
+          type: array
+          minItems: 64
+          maxItems: 64
+          items: { type: number, format: double }
+        history:
+          type: array
+          items:
+            type: object
+            required: [ts_ms, disp]
+            properties:
+              ts_ms: { type: integer, format: int64 }
+              disp: { type: number, format: double }
+        horizon: { type: integer, minimum: 1, maximum: 86400 }
+        model_version: { type: string }
+
+    PredictDisplacementResponse:
+      type: object
+      required: [element_id, horizon, pred, confidence]
+      properties:
+        element_id: { type: string }
+        horizon: { type: integer }
+        pred:
+          type: array
+          items:
+            type: object
+            required: [ts_ms, disp]
+            properties:
+              ts_ms: { type: integer, format: int64 }
+              disp: { type: number, format: double }
+        confidence: { type: number, format: double, minimum: 0, maximum: 1 }
+        model_version: { type: string }
+
+    EvaluateVibrationRequest:
+      type: object
+      required: [element_id, signal, fs_hz, window_ms]
+      properties:
+        element_id: { type: string }
+        signal:
+          type: array
+          minItems: 64
+          items: { type: number, format: double }
+        fs_hz: { type: integer, minimum: 1, maximum: 50000 }
+        window_ms: { type: integer, minimum: 100, maximum: 600000 }
+        model_version: { type: string }
+
+    EvaluateVibrationResponse:
+      type: object
+      required: [element_id, label, prob]
+      properties:
+        element_id: { type: string }
+        label:
+          type: string
+          enum: [NORMAL, WARNING, DAMAGE_SUSPECTED]
+        prob: { type: number, format: double, minimum: 0, maximum: 1 }
+        model_version: { type: string }
+
+    Alert:
+      type: object
+      required: [alert_id, element_id, level, metric, trigger_ts_ms, emit_ts_ms]
+      properties:
+        alert_id: { type: string }
+        element_id: { type: string }
+        level: { type: string, enum: [L1, L2, L3] }
+        metric: { $ref: "#/components/schemas/Metric" }
+        trigger_ts_ms: { type: integer, format: int64 }
+        emit_ts_ms: { type: integer, format: int64 }
+        note: { type: string }
+
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            trace_id: { type: string }

@@ -1,0 +1,15 @@
+{
+  "model_id": "demo_tower",
+  "name": "Mayue Demo Tower",
+  "lod": "LOD400-demo",
+  "elements": [
+    { "element_id": "E1001", "name": "Foundation Core", "shape": "box", "position": [0, 6, 0], "size": [10, 12, 10], "zone": "foundation", "material": { "base": "#5B646F" } },
+    { "element_id": "E1002", "name": "South Mega Column", "shape": "box", "position": [-8, 28, 0], "size": [3, 44, 3], "zone": "south", "material": { "base": "#7B8794" } },
+    { "element_id": "E1003", "name": "North Mega Column", "shape": "box", "position": [8, 28, 0], "size": [3, 44, 3], "zone": "north", "material": { "base": "#7B8794" } },
+    { "element_id": "E1004", "name": "East Outrigger", "shape": "box", "position": [6, 38, 0], "size": [10, 2, 2], "zone": "east", "material": { "base": "#88929E" } },
+    { "element_id": "E1005", "name": "West Outrigger", "shape": "box", "position": [-6, 38, 0], "size": [10, 2, 2], "zone": "west", "material": { "base": "#88929E" } },
+    { "element_id": "E1006", "name": "Mid Core Tube", "shape": "box", "position": [0, 30, 0], "size": [8, 36, 8], "zone": "core_mid", "material": { "base": "#9AA5B1" } },
+    { "element_id": "E1007", "name": "Upper Core Tube", "shape": "box", "position": [0, 52, 0], "size": [6, 18, 6], "zone": "core_top", "material": { "base": "#AAB4BE" } },
+    { "element_id": "E1008", "name": "Crown Mast", "shape": "cylinder", "position": [0, 66, 0], "size": [1.2, 12, 1.2], "zone": "crown", "material": { "base": "#C7CDD3" } }
+  ]
+}

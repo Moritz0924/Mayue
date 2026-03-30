@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mayue Three.js 数字孪生</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: rgba(15, 23, 42, 0.95);
+        --line: rgba(255, 255, 255, 0.08);
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+      }
+
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Segoe UI Variable Text", "Microsoft YaHei", system-ui, sans-serif;
+      }
+
+      #app {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        height: 100%;
+      }
+
+      #viewport {
+        position: relative;
+        overflow: hidden;
+      }
+
+      #panel {
+        padding: 14px;
+        border-left: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .card {
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        border-radius: 12px;
+        padding: 11px;
+        margin-bottom: 10px;
+        background: rgba(30, 41, 59, 0.75);
+      }
+
+      .muted {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .pill {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .normal {
+        background: rgba(76, 175, 80, 0.18);
+        color: #86efac;
+      }
+
+      .medium {
+        background: rgba(251, 140, 0, 0.18);
+        color: #fdba74;
+      }
+
+      .high {
+        background: rgba(229, 57, 53, 0.18);
+        color: #fca5a5;
+      }
+
+      ul {
+        padding-left: 18px;
+        margin: 8px 0 0;
+      }
+
+      canvas {
+        display: block;
+      }
+
+      #legend {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        display: flex;
+        gap: 8px;
+        background: rgba(15, 23, 42, 0.72);
+        padding: 8px 10px;
+        border-radius: 10px;
+      }
+
+      #legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+
+      .green {
+        background: #4caf50;
+      }
+
+      .orange {
+        background: #fb8c00;
+      }
+
+      .red {
+        background: #e53935;
+      }
+
+      .embed #app {
+        grid-template-columns: 1fr;
+      }
+
+      .embed #panel {
+        display: none;
+      }
+
+      .embed #legend {
+        left: auto;
+        right: 10px;
+        top: 10px;
+      }
+    </style>
+    <script>
+      const qs = new URLSearchParams(window.location.search);
+      if (qs.get("embed") === "1") {
+        document.documentElement.classList.add("embed");
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app">
+      <div id="viewport">
+        <div id="legend">
+          <span><i class="dot green"></i>正常</span>
+          <span><i class="dot orange"></i>中风险</span>
+          <span><i class="dot red"></i>高风险</span>
+        </div>
+      </div>
+      <aside id="panel">
+        <div class="card">
+          <h2 style="margin: 0 0 6px">Mayue 数字孪生主舞台</h2>
+          <div class="muted">Three.js 场景 + 构件状态联动</div>
+          <p style="line-height: 1.6">
+            点击任意构件可查看实时指标与告警信息。若在嵌入模式下，该选择会同步回展厅主页面。
+          </p>
+        </div>
+        <div id="selection" class="card">
+          <h3 style="margin-top: 0">点击构件查看详情</h3>
+          <div class="muted">当前未选中构件</div>
+        </div>
+        <div class="card">
+          <h3 style="margin-top: 0">数据来源</h3>
+          <div class="muted">场景：GET /api/twin/scene</div>
+          <div class="muted">构件详情：GET /api/twin/elements/:element_id</div>
+        </div>
+      </aside>
+    </div>
+    <script type="module" src="./twin-demo.js"></script>
+  </body>
+</html>
+

@@ -1,0 +1,255 @@
+diff -ruN '--exclude=dist' '--exclude=__pycache__' a/algo/algos/demo_inference.py b/algo/algos/demo_inference.py
+--- a/algo/algos/demo_inference.py	2026-03-13 14:35:49.807121458 +0000
++++ b/algo/algos/demo_inference.py	2026-03-13 14:26:45.001753267 +0000
+@@ -166,7 +166,13 @@
+     freqs = np.fft.rfftfreq(centered.size, d=1.0 / fs_hz)
+     if freqs.size <= 1:
+         return 0.0
+-    idx = int(np.argmax(np.abs(spectrum[1:])) + 1)
++    magnitudes = np.abs(spectrum[1:])
++    if magnitudes.size == 0:
++        return 0.0
++    peak = float(np.max(magnitudes))
++    if not np.isfinite(peak) or peak <= 1e-8:
++        return 0.0
++    idx = int(np.argmax(magnitudes) + 1)
+     return float(freqs[idx])
+ 
+ 
+diff -ruN '--exclude=dist' '--exclude=__pycache__' a/backend/src/api/target/evaluate.router.ts b/backend/src/api/target/evaluate.router.ts
+--- a/backend/src/api/target/evaluate.router.ts	2026-03-13 14:35:49.809885572 +0000
++++ b/backend/src/api/target/evaluate.router.ts	2026-03-13 14:28:08.634456544 +0000
+@@ -2,6 +2,7 @@
+ import { asyncHandler } from "../middlewares/async.js";
+ import { badRequest } from "../../domain/common/errors.js";
+ import { buildVibrationSignal } from "../../services/featureEngineering.js";
++import { assertElementTelemetry, assertKnownElementId } from "../../services/elementGuard.js";
+ import { runPythonTask } from "../../services/pythonBridge.js";
+ 
+ export function createEvaluateTargetRouter(): Router {
+@@ -19,7 +20,14 @@
+         throw badRequest("window_ms must be between 100 and 600000");
+       }
+ 
+-      const signalPack = Array.isArray(body.signal) && body.signal.length >= 32
++      const hasSignal = Array.isArray(body.signal) && body.signal.length >= 32;
++      if (hasSignal) {
++        await assertKnownElementId(element_id);
++      } else {
++        await assertElementTelemetry(element_id, ["vib"]);
++      }
++
++      const signalPack = hasSignal
+         ? {
+             signal: body.signal.map((v: unknown) => Number(v)),
+             raw_point_count: body.signal.length,
+diff -ruN '--exclude=dist' '--exclude=__pycache__' a/backend/src/api/target/predict.router.ts b/backend/src/api/target/predict.router.ts
+--- a/backend/src/api/target/predict.router.ts	2026-03-13 14:35:49.809230409 +0000
++++ b/backend/src/api/target/predict.router.ts	2026-03-13 14:28:08.633451411 +0000
+@@ -2,6 +2,7 @@
+ import { asyncHandler } from "../middlewares/async.js";
+ import { badRequest } from "../../domain/common/errors.js";
+ import { buildFeatureVector } from "../../services/featureEngineering.js";
++import { assertElementTelemetry, assertKnownElementId } from "../../services/elementGuard.js";
+ import { runPythonTask } from "../../services/pythonBridge.js";
+ 
+ export function createPredictTargetRouter(): Router {
+@@ -26,6 +27,12 @@
+         throw badRequest("history is required when features_64 is provided");
+       }
+ 
++      if (hasFeatureVector) {
++        await assertKnownElementId(element_id);
++      } else {
++        await assertElementTelemetry(element_id, ["disp"]);
++      }
++
+       const featurePack = hasFeatureVector
+         ? {
+             features_64: body.features_64.map((v: unknown) => Number(v)),
+diff -ruN '--exclude=dist' '--exclude=__pycache__' a/backend/src/app/config.ts b/backend/src/app/config.ts
+--- a/backend/src/app/config.ts	2026-03-10 13:34:44.000000000 +0000
++++ b/backend/src/app/config.ts	2026-03-13 14:26:45.001022445 +0000
+@@ -38,6 +38,16 @@
+   return "disabled";
+ }
+ 
++
++function parseFiniteNumber(value: string | undefined, fallback: number): number {
++  const parsed = Number(value);
++  return Number.isFinite(parsed) ? parsed : fallback;
++}
++
++function parseFiniteInteger(value: string | undefined, fallback: number): number {
++  return Math.trunc(parseFiniteNumber(value, fallback));
++}
++
+ function normalizeBaseUrl(mode: LlmMode, value: string | undefined): string {
+   const raw = value?.trim();
+   if (raw) return raw.replace(/\/+$/, "");
+@@ -53,7 +63,7 @@
+   const llmMode = normalizeMode(process.env.MAYUE_LLM_MODE);
+ 
+   return {
+-    port: Number(process.env.PORT ?? 8000),
++    port: Math.max(1, parseFiniteInteger(process.env.PORT, 8000)),
+     pythonBin: process.env.PYTHON_BIN?.trim() || "python3",
+     repoRoot,
+     llm: {
+@@ -64,9 +74,9 @@
+       baseUrl: normalizeBaseUrl(llmMode, process.env.MAYUE_LLM_BASE_URL),
+       apiKey: process.env.MAYUE_LLM_API_KEY?.trim() || "",
+       think: parseBool(process.env.MAYUE_LLM_THINK, false),
+-      timeoutMs: Math.max(5_000, Number(process.env.MAYUE_LLM_TIMEOUT_MS ?? 45_000)),
+-      maxToolRounds: Math.max(1, Math.min(10, Number(process.env.MAYUE_LLM_MAX_TOOL_ROUNDS ?? 5))),
+-      temperature: Math.max(0, Math.min(1.5, Number(process.env.MAYUE_LLM_TEMPERATURE ?? 0.2))),
++      timeoutMs: Math.max(5_000, parseFiniteInteger(process.env.MAYUE_LLM_TIMEOUT_MS, 45_000)),
++      maxToolRounds: Math.max(1, Math.min(10, parseFiniteInteger(process.env.MAYUE_LLM_MAX_TOOL_ROUNDS, 5))),
++      temperature: Math.max(0, Math.min(1.5, parseFiniteNumber(process.env.MAYUE_LLM_TEMPERATURE, 0.2))),
+     },
+   };
+ }
+diff -ruN '--exclude=dist' '--exclude=__pycache__' a/backend/src/domain/alerts.ts b/backend/src/domain/alerts.ts
+--- a/backend/src/domain/alerts.ts	2026-03-10 13:34:44.000000000 +0000
++++ b/backend/src/domain/alerts.ts	2026-03-13 14:26:45.000320164 +0000
+@@ -21,6 +21,8 @@
+   note?: string;
+ }
+ 
++export type AlertSeed = Omit<Alert, "alert_id" | "emit_ts_ms"> & { emit_ts_ms?: number };
++
+ // In‑memory store for recent alerts. To avoid unbounded growth we cap the length.
+ const MAX_ALERTS = 1000;
+ const alertStore: Alert[] = [];
+@@ -36,7 +38,7 @@
+ /**
+  * Record a new alert in the in‑memory store and return it.
+  */
+-export function recordAlert(partial: Omit<Alert, "alert_id" | "emit_ts_ms"> & { emit_ts_ms?: number }): Alert {
++export function recordAlert(partial: AlertSeed): Alert {
+   const alert: Alert = {
+     alert_id: genId(),
+     emit_ts_ms: partial.emit_ts_ms ?? Date.now(),
+@@ -50,6 +52,23 @@
+   return alert;
+ }
+ 
++export function findRecentMatchingAlert(partial: Omit<AlertSeed, "emit_ts_ms">, within_ms = 5 * 60 * 1000): Alert | null {
++  const threshold = Date.now() - Math.max(0, within_ms);
++  for (let i = alertStore.length - 1; i >= 0; i--) {
++    const item = alertStore[i]!;
++    if (item.emit_ts_ms < threshold) break;
++    if (
++      item.element_id === partial.element_id
++      && item.level === partial.level
++      && item.metric === partial.metric
++      && item.note === partial.note
++    ) {
++      return item;
++    }
++  }
++  return null;
++}
++
+ /**
+  * Retrieve recent alerts. If a limit is provided, only the most recent `limit` alerts
+  * will be returned. The list is ordered from oldest to newest.
+diff -ruN '--exclude=dist' '--exclude=__pycache__' a/backend/src/services/copilot.ts b/backend/src/services/copilot.ts
+--- a/backend/src/services/copilot.ts	2026-03-13 14:35:49.811099135 +0000
++++ b/backend/src/services/copilot.ts	2026-03-13 14:29:20.121142078 +0000
+@@ -1,9 +1,10 @@
+ import { loadConfig } from "../app/config.js";
+ import { loadMaintenanceHistory } from "../demo/repository.js";
+-import { recordAlert } from "../domain/alerts.js";
++import { findRecentMatchingAlert, recordAlert } from "../domain/alerts.js";
+ import { eventBus, TOPIC_ALERTS } from "../infra/bus/eventBus.memory.js";
+ import { telemetryRingBuffer } from "../infra/cache/telemetryRingBuffer.js";
+ import { buildFeatureVector, buildVibrationSignal, type FeatureVector } from "./featureEngineering.js";
++import { assertElementTelemetry } from "./elementGuard.js";
+ import { getLlmStatus, requestStructuredJson, runToolLoop, type ChatMessage, type JsonSchema, type LlmTool, type ToolLoopResult } from "./llmRuntime.js";
+ import { runPythonTask } from "./pythonBridge.js";
+ 
+@@ -190,6 +191,7 @@
+ const PREDICTION_STEP_SEC = 5 * 60;
+ 
+ async function loadCopilotFacts(element_id: string, horizon_sec: number): Promise<CopilotFacts> {
++  await assertElementTelemetry(element_id, ["disp", "vib"]);
+   const features = buildFeatureVector(element_id, { history_steps: 16, step_ms: PREDICTION_STEP_SEC * 1000 });
+   const vibrationSignal = buildVibrationSignal(element_id, { size: 256, window_ms: 5 * 60 * 1000 });
+   const horizonSteps = Math.max(1, Math.ceil(horizon_sec / PREDICTION_STEP_SEC));
+@@ -220,7 +222,7 @@
+     loadMaintenanceHistory(),
+   ]);
+ 
+-  const predMax = Math.max(...predict.pred.map((p) => p.disp), currentDisp);
++  const predMax = Math.max(...predict.pred.map((p) => Math.abs(p.disp)), Math.abs(currentDisp));
+   const judged = riskFromSignals({ currentDisp, predMax, vibLabel: evaluate.label, vibProb: evaluate.prob });
+   const references = history
+     .filter((item) => item.element_id === element_id)
+@@ -326,14 +328,19 @@
+ 
+ function finalizeResult(result: CopilotResult): CopilotResult {
+   if (result.risk !== "LOW") {
+-    const alert = recordAlert({
++    const metric: "disp" | "vib" = result.risk === "HIGH" ? "disp" : "vib";
++    const candidate = {
+       element_id: result.element_id,
+       level: result.alert_level,
+-      metric: result.risk === "HIGH" ? "disp" : "vib",
++      metric,
+       trigger_ts_ms: Date.now(),
+       note: `AI联合分析判定 ${result.risk}`,
+-    });
+-    eventBus.publish(TOPIC_ALERTS, alert);
++    };
++    const existing = findRecentMatchingAlert(candidate, 5 * 60 * 1000);
++    if (!existing) {
++      const alert = recordAlert(candidate);
++      eventBus.publish(TOPIC_ALERTS, alert);
++    }
+   }
+   return result;
+ }
+@@ -439,7 +446,7 @@
+ function mergeLlmDraft(facts: CopilotFacts, base: CopilotResult, loopResult: ToolLoopResult, draft: LlmPlanDraft): CopilotResult {
+   const llmStatus = getLlmStatus();
+   const finalRisk = maxRisk(normalizeRisk(draft.risk, base.risk), base.risk);
+-  const finalAlert = alertFromRisk(maxRisk(finalRisk, base.risk));
++  const finalAlert = alertFromRisk(finalRisk);
+   const summary = normalizeText(draft.summary, base.summary);
+ 
+   const draftAgentMap = new Map<string, string>();
+@@ -464,7 +471,7 @@
+     mode: "llm-tool-calling",
+     summary,
+     risk: finalRisk,
+-    alert_level: normalizeAlertLevel(draft.alert_level, finalAlert),
++    alert_level: finalAlert,
+     agents,
+     actions: actions.length >= 3 ? actions : base.actions,
+     llm: {
+diff -ruN '--exclude=dist' '--exclude=__pycache__' a/backend/src/services/elementGuard.ts b/backend/src/services/elementGuard.ts
+--- a/backend/src/services/elementGuard.ts	1970-01-01 00:00:00.000000000 +0000
++++ b/backend/src/services/elementGuard.ts	2026-03-13 14:25:57.856738384 +0000
+@@ -0,0 +1,21 @@
++import { notFound } from "../domain/common/errors.js";
++import { telemetryRingBuffer, type Metric } from "../infra/cache/telemetryRingBuffer.js";
++import { loadTwinScene } from "../demo/repository.js";
++
++const DEFAULT_MODEL_ID = "demo_tower";
++
++export async function assertKnownElementId(element_id: string): Promise<void> {
++  const scene = await loadTwinScene(DEFAULT_MODEL_ID);
++  const exists = scene.elements.some((item) => item.element_id === element_id);
++  if (!exists) {
++    throw notFound("ELEMENT_NOT_FOUND", `unknown element_id: ${element_id}`);
++  }
++}
++
++export async function assertElementTelemetry(element_id: string, metrics: Metric[]): Promise<void> {
++  await assertKnownElementId(element_id);
++  const hasAnyMetric = metrics.some((metric) => telemetryRingBuffer.latestValue(element_id, metric) != null);
++  if (!hasAnyMetric) {
++    throw notFound("ELEMENT_NOT_FOUND", `no telemetry available for element_id: ${element_id}`);
++  }
++}

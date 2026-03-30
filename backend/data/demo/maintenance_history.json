@@ -1,0 +1,26 @@
+[
+  {
+    "record_id": "MH-2025-001",
+    "element_id": "E1002",
+    "issue": "幕墙连接位轻微位移升高",
+    "action": "复测位移计并复核锚栓预紧力",
+    "result": "24小时内回落",
+    "priority": "P2"
+  },
+  {
+    "record_id": "MH-2025-002",
+    "element_id": "E1008",
+    "issue": "顶部风致振动幅值偏高",
+    "action": "加密采样并校核阻尼参数",
+    "result": "确认属风荷载高峰",
+    "priority": "P1"
+  },
+  {
+    "record_id": "MH-2025-003",
+    "element_id": "E1006",
+    "issue": "中区核心筒应变偏移",
+    "action": "联动应变片与温度补偿模型",
+    "result": "消除温漂影响",
+    "priority": "P2"
+  }
+]

@@ -1,0 +1,69 @@
+{
+  "color": {
+    "bg": {
+      "top": "#F2F7FF",
+      "bottom": "#EDF2F8"
+    },
+    "panel": {
+      "base": "rgba(255,255,255,0.84)"
+    },
+    "line": {
+      "default": "rgba(38,68,112,0.12)"
+    },
+    "text": {
+      "primary": "#142742",
+      "secondary": "#4F6486"
+    },
+    "risk": {
+      "low": "#17A1A1",
+      "medium": "#FF8C3A",
+      "high": "#E04C4A"
+    },
+    "accent": {
+      "blue": "#2B7CFF"
+    }
+  },
+  "radius": {
+    "sm": 14,
+    "md": 18,
+    "lg": 26
+  },
+  "spacing": {
+    "xs": 8,
+    "sm": 12,
+    "md": 16,
+    "lg": 20,
+    "xl": 24
+  },
+  "shadow": {
+    "panel": "0 18 38 rgba(22,43,77,0.12)"
+  },
+  "typography": {
+    "title": {
+      "family": "Bahnschrift",
+      "size": 32,
+      "weight": 600
+    },
+    "section": {
+      "family": "Bahnschrift",
+      "size": 22,
+      "weight": 600
+    },
+    "body": {
+      "family": "Aptos",
+      "size": 14,
+      "weight": 400
+    },
+    "kpi": {
+      "family": "Bahnschrift",
+      "size": 26,
+      "weight": 700
+    },
+    "caption": {
+      "family": "Aptos",
+      "size": 12,
+      "weight": 500
+    }
+  }
+}
+

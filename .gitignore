@@ -18,3 +18,7 @@ Makefile
 # OS
 .DS_Store
 Thumbs.db
+
+#claude
+.claude/
+*.log

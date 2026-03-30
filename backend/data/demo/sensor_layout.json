@@ -1,0 +1,10 @@
+[
+  { "sensor_id": "S-FD-001", "element_id": "E1001", "type": "settlement", "coord_local": [0.0, 0.0, 0.0], "coord_bim": [0.0, 0.0, 0.0] },
+  { "sensor_id": "S-SC-001", "element_id": "E1002", "type": "disp", "coord_local": [-8.05, 44.02, 0.04], "coord_bim": [-8.0, 44.0, 0.0] },
+  { "sensor_id": "S-NC-001", "element_id": "E1003", "type": "disp", "coord_local": [8.04, 44.01, -0.03], "coord_bim": [8.0, 44.0, 0.0] },
+  { "sensor_id": "S-EO-001", "element_id": "E1004", "type": "vib", "coord_local": [6.02, 38.03, 0.08], "coord_bim": [6.0, 38.0, 0.0] },
+  { "sensor_id": "S-WO-001", "element_id": "E1005", "type": "vib", "coord_local": [-5.98, 38.02, -0.06], "coord_bim": [-6.0, 38.0, 0.0] },
+  { "sensor_id": "S-MC-001", "element_id": "E1006", "type": "strain", "coord_local": [0.03, 40.02, 0.02], "coord_bim": [0.0, 40.0, 0.0] },
+  { "sensor_id": "S-UC-001", "element_id": "E1007", "type": "wind", "coord_local": [0.02, 58.01, 0.05], "coord_bim": [0.0, 58.0, 0.0] },
+  { "sensor_id": "S-CM-001", "element_id": "E1008", "type": "disp", "coord_local": [0.01, 71.02, -0.03], "coord_bim": [0.0, 71.0, 0.0] }
+]

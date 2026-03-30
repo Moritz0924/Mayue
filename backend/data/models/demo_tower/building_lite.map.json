@@ -1,0 +1,14 @@
+{
+  "model_id": "demo_tower",
+  "name": "Mayue Demo Tower",
+  "elements": [
+    { "element_id": "E1001", "name": "Foundation Core" },
+    { "element_id": "E1002", "name": "South Mega Column" },
+    { "element_id": "E1003", "name": "North Mega Column" },
+    { "element_id": "E1004", "name": "East Outrigger" },
+    { "element_id": "E1005", "name": "West Outrigger" },
+    { "element_id": "E1006", "name": "Mid Core Tube" },
+    { "element_id": "E1007", "name": "Upper Core Tube" },
+    { "element_id": "E1008", "name": "Crown Mast" }
+  ]
+}
